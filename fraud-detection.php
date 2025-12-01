@@ -88,12 +88,25 @@ class Fraud_Detection_Plugin {
      * Constructor
      */
     private function __construct() {
+        // Declare WooCommerce HPOS compatibility
+        add_action( 'before_woocommerce_init', array( $this, 'declare_wc_compatibility' ) );
+        
         // Check if WooCommerce is active
         add_action( 'plugins_loaded', array( $this, 'init' ) );
         
         // Activation and deactivation hooks
         register_activation_hook( __FILE__, array( $this, 'activate' ) );
         register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
+    }
+
+    /**
+     * Declare WooCommerce HPOS compatibility
+     */
+    public function declare_wc_compatibility() {
+        if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
+        }
     }
 
     /**
@@ -133,6 +146,7 @@ class Fraud_Detection_Plugin {
      */
     private function includes() {
         require_once FRAUD_DETECTION_PLUGIN_DIR . 'includes/class-database.php';
+        require_once FRAUD_DETECTION_PLUGIN_DIR . 'includes/class-device-fingerprint.php';
         require_once FRAUD_DETECTION_PLUGIN_DIR . 'includes/class-fraud-detector.php';
         require_once FRAUD_DETECTION_PLUGIN_DIR . 'includes/class-order-tracker.php';
         require_once FRAUD_DETECTION_PLUGIN_DIR . 'includes/class-list-manager.php';
@@ -182,19 +196,23 @@ class Fraud_Detection_Plugin {
     /**
      * Set default options
      */
-    private function set_default_options() {
         $defaults = array(
             'fraud_detection_enabled' => 'yes',
             'fraud_detection_daily_limit' => 3,
             'fraud_detection_check_email' => 'yes',
             'fraud_detection_check_phone' => 'yes',
             'fraud_detection_normalize_phone' => 'yes',
+            'fraud_detection_check_device_fingerprint' => 'yes',
+            'fraud_detection_check_browser_fingerprint' => 'yes',
+            'fraud_detection_device_limit' => 5,
             'fraud_detection_block_message' => __( 'Your order has been blocked due to security concerns. Please contact support.', 'fraud-detection' ),
             'fraud_detection_limit_message' => __( 'You have reached the maximum number of orders allowed per day from this phone number.', 'fraud-detection' ),
+            'fraud_detection_device_limit_message' => __( 'You have reached the maximum number of orders allowed from this device.', 'fraud-detection' ),
             'fraud_detection_whitelist_bypass_limit' => 'yes',
             'fraud_detection_log_retention_days' => 30,
             'fraud_detection_admin_notifications' => 'yes',
             'fraud_detection_admin_email' => get_option( 'admin_email' ),
+        );  'fraud_detection_admin_email' => get_option( 'admin_email' ),
         );
 
         foreach ( $defaults as $key => $value ) {

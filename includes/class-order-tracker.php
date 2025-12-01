@@ -57,7 +57,10 @@ class Fraud_Detection_Order_Tracker {
         $customer_ip = fraud_detection_get_customer_ip();
         $order_total = $order->get_total();
 
-        // Insert log
+        // Get device fingerprint data
+        $device_data = Fraud_Detection_Device_Fingerprint::get_device_data();
+
+        // Insert log with device fingerprint data
         $wpdb->insert(
             $table,
             array(
@@ -66,19 +69,27 @@ class Fraud_Detection_Order_Tracker {
                 'customer_phone'             => $billing_phone,
                 'customer_phone_normalized'  => $phone_normalized,
                 'customer_ip'                => $customer_ip,
+                'device_fingerprint'         => $device_data['fingerprint'],
+                'browser_fingerprint'        => $device_data['browser_fingerprint'],
+                'device_cookie'              => $device_data['device_cookie'],
+                'user_agent'                 => $device_data['user_agent'],
+                'device_type'                => $device_data['device_type'],
+                'browser_name'               => $device_data['browser_info']['name'],
                 'order_total'                => $order_total,
                 'is_blocked'                 => 0,
                 'date_created'               => current_time( 'mysql' ),
             ),
-            array( '%d', '%s', '%s', '%s', '%s', '%f', '%d', '%s' )
+            array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%d', '%s' )
         );
 
-        // Add order note
+        // Add order note with device info
         $order->add_order_note(
             sprintf(
-                __( 'Fraud Detection: Order tracked. Phone: %s, IP: %s', 'fraud-detection' ),
+                __( 'Fraud Detection: Order tracked. Phone: %s, IP: %s, Device: %s (%s)', 'fraud-detection' ),
                 $phone_normalized,
-                $customer_ip
+                $customer_ip,
+                $device_data['device_type'],
+                $device_data['browser_info']['name']
             )
         );
     }

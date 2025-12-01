@@ -119,6 +119,12 @@ class Fraud_Detection_Database {
             customer_phone varchar(50),
             customer_phone_normalized varchar(50),
             customer_ip varchar(50),
+            device_fingerprint varchar(32),
+            browser_fingerprint varchar(32),
+            device_cookie varchar(255),
+            user_agent text,
+            device_type varchar(20),
+            browser_name varchar(50),
             order_total decimal(10,2),
             is_blocked tinyint(1) NOT NULL DEFAULT 0,
             block_reason text,
@@ -128,6 +134,9 @@ class Fraud_Detection_Database {
             KEY customer_email (customer_email),
             KEY customer_phone_normalized (customer_phone_normalized),
             KEY customer_ip (customer_ip),
+            KEY device_fingerprint (device_fingerprint),
+            KEY browser_fingerprint (browser_fingerprint),
+            KEY device_cookie (device_cookie),
             KEY is_blocked (is_blocked),
             KEY date_created (date_created)
         ) $charset_collate;";

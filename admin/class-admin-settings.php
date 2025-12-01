@@ -83,8 +83,12 @@ class Fraud_Detection_Admin_Settings {
         register_setting( 'fraud_detection_settings', 'fraud_detection_check_email' );
         register_setting( 'fraud_detection_settings', 'fraud_detection_check_phone' );
         register_setting( 'fraud_detection_settings', 'fraud_detection_normalize_phone' );
+        register_setting( 'fraud_detection_settings', 'fraud_detection_check_device_fingerprint' );
+        register_setting( 'fraud_detection_settings', 'fraud_detection_check_browser_fingerprint' );
+        register_setting( 'fraud_detection_settings', 'fraud_detection_device_limit' );
         register_setting( 'fraud_detection_settings', 'fraud_detection_block_message' );
         register_setting( 'fraud_detection_settings', 'fraud_detection_limit_message' );
+        register_setting( 'fraud_detection_settings', 'fraud_detection_device_limit_message' );
         register_setting( 'fraud_detection_settings', 'fraud_detection_whitelist_bypass_limit' );
         register_setting( 'fraud_detection_settings', 'fraud_detection_log_retention_days' );
         register_setting( 'fraud_detection_settings', 'fraud_detection_admin_notifications' );
@@ -354,6 +358,36 @@ class Fraud_Detection_Admin_Settings {
 
                 <tr>
                     <th scope="row">
+                        <label for="fraud_detection_check_device_fingerprint"><?php esc_html_e( 'Device Fingerprint Detection', 'fraud-detection' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="checkbox" name="fraud_detection_check_device_fingerprint" id="fraud_detection_check_device_fingerprint" value="yes" <?php checked( get_option( 'fraud_detection_check_device_fingerprint', 'yes' ), 'yes' ); ?>>
+                        <p class="description"><?php esc_html_e( 'Enable advanced device fingerprinting to prevent users from changing phone numbers on the same device.', 'fraud-detection' ); ?></p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th scope="row">
+                        <label for="fraud_detection_check_browser_fingerprint"><?php esc_html_e( 'Browser Fingerprint Detection', 'fraud-detection' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="checkbox" name="fraud_detection_check_browser_fingerprint" id="fraud_detection_check_browser_fingerprint" value="yes" <?php checked( get_option( 'fraud_detection_check_browser_fingerprint', 'yes' ), 'yes' ); ?>>
+                        <p class="description"><?php esc_html_e( 'Use browser fingerprinting (canvas, WebGL, fonts) to detect fraud attempts.', 'fraud-detection' ); ?></p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th scope="row">
+                        <label for="fraud_detection_device_limit"><?php esc_html_e( 'Device Order Limit', 'fraud-detection' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="number" name="fraud_detection_device_limit" id="fraud_detection_device_limit" value="<?php echo esc_attr( get_option( 'fraud_detection_device_limit', 5 ) ); ?>" min="1" class="small-text">
+                        <p class="description"><?php esc_html_e( 'Maximum number of orders allowed per day from the same device (even with different phone numbers).', 'fraud-detection' ); ?></p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th scope="row">
                         <label for="fraud_detection_block_message"><?php esc_html_e( 'Block Message', 'fraud-detection' ); ?></label>
                     </th>
                     <td>
@@ -369,6 +403,16 @@ class Fraud_Detection_Admin_Settings {
                     <td>
                         <textarea name="fraud_detection_limit_message" id="fraud_detection_limit_message" rows="3" class="large-text"><?php echo esc_textarea( get_option( 'fraud_detection_limit_message' ) ); ?></textarea>
                         <p class="description"><?php esc_html_e( 'Message displayed when daily order limit is reached.', 'fraud-detection' ); ?></p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th scope="row">
+                        <label for="fraud_detection_device_limit_message"><?php esc_html_e( 'Device Limit Message', 'fraud-detection' ); ?></label>
+                    </th>
+                    <td>
+                        <textarea name="fraud_detection_device_limit_message" id="fraud_detection_device_limit_message" rows="3" class="large-text"><?php echo esc_textarea( get_option( 'fraud_detection_device_limit_message' ) ); ?></textarea>
+                        <p class="description"><?php esc_html_e( 'Message displayed when device order limit is reached.', 'fraud-detection' ); ?></p>
                     </td>
                 </tr>
 
