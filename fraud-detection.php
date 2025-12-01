@@ -196,6 +196,7 @@ class Fraud_Detection_Plugin {
     /**
      * Set default options
      */
+    private function set_default_options() {
         $defaults = array(
             'fraud_detection_enabled' => 'yes',
             'fraud_detection_daily_limit' => 3,
@@ -212,7 +213,6 @@ class Fraud_Detection_Plugin {
             'fraud_detection_log_retention_days' => 30,
             'fraud_detection_admin_notifications' => 'yes',
             'fraud_detection_admin_email' => get_option( 'admin_email' ),
-        );  'fraud_detection_admin_email' => get_option( 'admin_email' ),
         );
 
         foreach ( $defaults as $key => $value ) {
