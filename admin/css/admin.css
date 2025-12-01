@@ -1,0 +1,101 @@
+/* Admin Styles */
+.fraud-detection-admin {
+  margin-top: 20px;
+}
+
+.fraud-detection-admin .nav-tab-wrapper {
+  margin-bottom: 20px;
+}
+
+.fraud-detection-admin .tab-content {
+  background: #fff;
+  padding: 20px;
+  border: 1px solid #ccd0d4;
+  border-top: none;
+}
+
+.fraud-detection-actions {
+  margin: 20px 0;
+}
+
+.fraud-detection-actions .button {
+  margin-right: 10px;
+}
+
+.fraud-detection-admin table.form-table th {
+  width: 250px;
+}
+
+.fraud-detection-admin .wp-list-table {
+  margin-top: 20px;
+}
+
+.fraud-detection-admin .wp-list-table th,
+.fraud-detection-admin .wp-list-table td {
+  padding: 10px;
+}
+
+.fraud-detection-admin .tablenav {
+  margin-top: 20px;
+}
+
+.fraud-detection-admin .tablenav-pages {
+  float: right;
+}
+
+.fraud-detection-admin .tablenav-pages a,
+.fraud-detection-admin .tablenav-pages span {
+  padding: 5px 10px;
+  margin: 0 2px;
+  text-decoration: none;
+}
+
+.fraud-detection-admin .tablenav-pages .current {
+  font-weight: bold;
+  background: #2271b1;
+  color: #fff;
+  border-radius: 3px;
+}
+
+/* Form Styles */
+.fraud-detection-admin input[type="text"],
+.fraud-detection-admin input[type="email"],
+.fraud-detection-admin input[type="number"],
+.fraud-detection-admin textarea,
+.fraud-detection-admin select {
+  padding: 8px;
+}
+
+.fraud-detection-admin .description {
+  color: #666;
+  font-style: italic;
+}
+
+/* Status Colors */
+.fraud-detection-admin .status-allowed {
+  color: #46b450;
+  font-weight: bold;
+}
+
+.fraud-detection-admin .status-blocked {
+  color: #dc3232;
+  font-weight: bold;
+}
+
+.fraud-detection-admin .status-permanent {
+  color: #d63638;
+  font-weight: bold;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+  .fraud-detection-admin table.form-table th {
+    width: 100%;
+    display: block;
+  }
+
+  .fraud-detection-admin table.form-table td {
+    display: block;
+    width: 100%;
+  }
+}

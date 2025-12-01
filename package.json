@@ -1,0 +1,25 @@
+{
+  "name": "fraud-detection",
+  "version": "1.0.0",
+  "description": "WooCommerce fraud detection and duplicate order filter plugin",
+  "main": "fraud-detection.php",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "wordpress",
+    "woocommerce",
+    "fraud",
+    "detection",
+    "duplicate",
+    "order",
+    "blacklist"
+  ],
+  "author": "Mushfikur Rahman",
+  "license": "GPL-2.0-or-later",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/fraud-detection.git"
+  }
+}
