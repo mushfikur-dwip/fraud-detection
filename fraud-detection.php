@@ -136,9 +136,14 @@ class Fraud_Detection_Plugin {
             $this->admin_settings = new Fraud_Detection_Admin_Settings();
         }
 
-        // Hook into WooCommerce checkout
-        add_action( 'woocommerce_checkout_process', array( $this->detector, 'validate_checkout' ), 10 );
+        // Hook into WooCommerce checkout - Use higher priority to run early
+        add_action( 'woocommerce_checkout_process', array( $this->detector, 'validate_checkout' ), 5 );
+        add_action( 'woocommerce_after_checkout_validation', array( $this->detector, 'validate_after_checkout' ), 10, 2 );
         add_action( 'woocommerce_checkout_order_processed', array( $this->order_tracker, 'track_order' ), 10, 3 );
+        
+        // Support for WooCommerce Blocks
+        add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( $this->detector, 'validate_block_checkout' ), 10, 2 );
+        add_action( 'woocommerce_blocks_checkout_before_order_processing', array( $this->detector, 'validate_blocks_before_processing' ), 10, 2 );
     }
 
     /**

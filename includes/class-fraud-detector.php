@@ -82,7 +82,7 @@ class Fraud_Detection_Detector {
             $this->log_blocked_attempt( $billing_email, $phone_normalized, $customer_ip, $device_data, $blacklist_result['reason'] );
             
             wc_add_notice( $message, 'error' );
-            return;
+            throw new Exception( $message );
         }
 
         // Check device fingerprint limit (if enabled)
@@ -98,7 +98,7 @@ class Fraud_Detection_Detector {
                 $this->log_blocked_attempt( $billing_email, $phone_normalized, $customer_ip, $device_data, 'Device limit exceeded' );
                 
                 wc_add_notice( $message, 'error' );
-                return;
+                throw new Exception( $message );
             }
         }
 
@@ -112,7 +112,7 @@ class Fraud_Detection_Detector {
                 $this->log_blocked_attempt( $billing_email, $phone_normalized, $customer_ip, $device_data, 'Browser fingerprint limit exceeded' );
                 
                 wc_add_notice( $message, 'error' );
-                return;
+                throw new Exception( $message );
             }
         }
 
@@ -133,8 +133,11 @@ class Fraud_Detection_Detector {
                 // Log blocked attempt
                 $this->log_blocked_attempt( $billing_email, $phone_normalized, $customer_ip, $device_data, 'Daily phone limit exceeded' );
                 
+                // Add notice - use multiple methods to ensure it shows
                 wc_add_notice( $message, 'error' );
-                return;
+                
+                // Also throw exception to stop checkout process
+                throw new Exception( $message );
             }
         }
 
@@ -148,9 +151,135 @@ class Fraud_Detection_Detector {
                 );
                 
                 wc_add_notice( $message, 'error' );
+                throw new Exception( $message );
+            }
+        }
+    }
+
+    /**
+     * Validate after checkout validation hook (alternative method)
+     * This runs after WooCommerce's own validation
+     *
+     * @param array    $data Posted data
+     * @param WP_Error $errors Error object
+     */
+    public function validate_after_checkout( $data, $errors ) {
+        error_log( 'Fraud Detection: validate_after_checkout() called' );
+        
+        // Check if fraud detection is enabled
+        if ( 'yes' !== get_option( 'fraud_detection_enabled', 'yes' ) ) {
+            return;
+        }
+
+        // Get checkout data
+        $billing_email = isset( $data['billing_email'] ) ? sanitize_email( $data['billing_email'] ) : '';
+        $billing_phone = isset( $data['billing_phone'] ) ? sanitize_text_field( $data['billing_phone'] ) : '';
+
+        // Normalize phone
+        $phone_normalized = '';
+        if ( 'yes' === get_option( 'fraud_detection_normalize_phone', 'yes' ) ) {
+            $phone_normalized = fraud_detection_normalize_phone( $billing_phone );
+        } else {
+            $phone_normalized = $billing_phone;
+        }
+
+        $customer_ip = fraud_detection_get_customer_ip();
+        $device_data = Fraud_Detection_Device_Fingerprint::get_device_data();
+
+        // Check whitelist first
+        if ( $this->is_whitelisted( $billing_email, $phone_normalized ) ) {
+            return;
+        }
+
+        // Check blacklist
+        $blacklist_result = $this->check_blacklist( $billing_email, $phone_normalized, $customer_ip );
+        if ( $blacklist_result['blocked'] ) {
+            $message = get_option( 'fraud_detection_block_message', __( 'Your order has been blocked due to security concerns. Please contact support.', 'fraud-detection' ) );
+            $errors->add( 'fraud_detection_blacklist', $message );
+            $this->log_blocked_attempt( $billing_email, $phone_normalized, $customer_ip, $device_data, $blacklist_result['reason'] );
+            return;
+        }
+
+        // Check daily phone limit
+        if ( 'yes' === get_option( 'fraud_detection_check_phone', 'yes' ) && ! empty( $phone_normalized ) ) {
+            $limit_result = $this->check_daily_limit( $phone_normalized );
+            
+            if ( $limit_result['exceeded'] ) {
+                $message = get_option( 'fraud_detection_limit_message', __( 'You have reached the maximum number of orders allowed per day from this phone number.', 'fraud-detection' ) );
+                $errors->add( 'fraud_detection_phone_limit', $message );
+                $this->log_blocked_attempt( $billing_email, $phone_normalized, $customer_ip, $device_data, 'Daily phone limit exceeded' );
+                error_log( 'Fraud Detection: BLOCKED via validate_after_checkout - Phone limit exceeded' );
                 return;
             }
         }
+
+        // Check device limit
+        if ( 'yes' === get_option( 'fraud_detection_check_device_fingerprint', 'yes' ) ) {
+            $device_limit_result = $this->check_device_limit( $device_data['fingerprint'] );
+            if ( $device_limit_result['exceeded'] ) {
+                $message = get_option( 'fraud_detection_device_limit_message', __( 'You have reached the maximum number of orders allowed from this device.', 'fraud-detection' ) );
+                $errors->add( 'fraud_detection_device_limit', $message );
+                $this->log_blocked_attempt( $billing_email, $phone_normalized, $customer_ip, $device_data, 'Device limit exceeded' );
+                return;
+            }
+        }
+    }
+
+    /**
+     * Validate WooCommerce Blocks checkout
+     *
+     * @param WC_Order $order Order object
+     * @param WP_REST_Request $request Request object
+     */
+    public function validate_block_checkout( $order, $request ) {
+        error_log( 'Fraud Detection: validate_block_checkout() called for Block-based checkout' );
+        
+        if ( 'yes' !== get_option( 'fraud_detection_enabled', 'yes' ) ) {
+            return;
+        }
+
+        $billing_email = $order->get_billing_email();
+        $billing_phone = $order->get_billing_phone();
+        
+        $phone_normalized = '';
+        if ( 'yes' === get_option( 'fraud_detection_normalize_phone', 'yes' ) ) {
+            $phone_normalized = fraud_detection_normalize_phone( $billing_phone );
+        } else {
+            $phone_normalized = $billing_phone;
+        }
+
+        $customer_ip = fraud_detection_get_customer_ip();
+        $device_data = Fraud_Detection_Device_Fingerprint::get_device_data();
+
+        // Check whitelist
+        if ( $this->is_whitelisted( $billing_email, $phone_normalized ) ) {
+            return;
+        }
+
+        // Check daily phone limit
+        if ( 'yes' === get_option( 'fraud_detection_check_phone', 'yes' ) && ! empty( $phone_normalized ) ) {
+            $limit_result = $this->check_daily_limit( $phone_normalized );
+            
+            if ( $limit_result['exceeded'] ) {
+                $message = get_option( 'fraud_detection_limit_message', __( 'You have reached the maximum number of orders allowed per day from this phone number.', 'fraud-detection' ) );
+                $this->log_blocked_attempt( $billing_email, $phone_normalized, $customer_ip, $device_data, 'Daily phone limit exceeded (Blocks)' );
+                error_log( 'Fraud Detection: BLOCKED via Block checkout - Phone limit exceeded' );
+                throw new Exception( $message );
+            }
+        }
+    }
+
+    /**
+     * Validate before Blocks checkout processing
+     *
+     * @param WC_Order $order Order object
+     * @param WP_REST_Request $request Request object  
+     */
+    public function validate_blocks_before_processing( $order, $request ) {
+        error_log( 'Fraud Detection: validate_blocks_before_processing() called' );
+        
+        // Run the same validation as block checkout
+        $this->validate_block_checkout( $order, $request );
     }
 
     /**
