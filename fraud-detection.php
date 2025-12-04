@@ -154,6 +154,11 @@ class Fraud_Detection_Plugin {
 
         if ( is_admin() ) {
             require_once FRAUD_DETECTION_PLUGIN_DIR . 'admin/class-admin-settings.php';
+            
+            // Include test page for debugging
+            if ( file_exists( FRAUD_DETECTION_PLUGIN_DIR . 'test-plugin.php' ) ) {
+                require_once FRAUD_DETECTION_PLUGIN_DIR . 'test-plugin.php';
+            }
         }
     }
 

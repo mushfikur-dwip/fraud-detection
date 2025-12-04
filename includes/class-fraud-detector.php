@@ -28,14 +28,23 @@ class Fraud_Detection_Detector {
      * Validate checkout before order is created
      */
     public function validate_checkout() {
+        // Debug log
+        error_log( 'Fraud Detection: validate_checkout() called' );
+        
         // Check if fraud detection is enabled
-        if ( 'yes' !== get_option( 'fraud_detection_enabled', 'yes' ) ) {
+        $is_enabled = get_option( 'fraud_detection_enabled', 'yes' );
+        error_log( 'Fraud Detection: enabled = ' . $is_enabled );
+        
+        if ( 'yes' !== $is_enabled ) {
+            error_log( 'Fraud Detection: Plugin is disabled, skipping validation' );
             return;
         }
 
         // Get checkout data
         $billing_email = isset( $_POST['billing_email'] ) ? sanitize_email( wp_unslash( $_POST['billing_email'] ) ) : '';
         $billing_phone = isset( $_POST['billing_phone'] ) ? sanitize_text_field( wp_unslash( $_POST['billing_phone'] ) ) : '';
+
+        error_log( 'Fraud Detection: Phone=' . $billing_phone . ', Email=' . $billing_email );
 
         // Normalize phone if enabled
         $phone_normalized = '';
@@ -45,7 +54,10 @@ class Fraud_Detection_Detector {
             $phone_normalized = $billing_phone;
         }
 
+        error_log( 'Fraud Detection: Normalized phone=' . $phone_normalized );
+
         $customer_ip = fraud_detection_get_customer_ip();
+        error_log( 'Fraud Detection: IP=' . $customer_ip );
 
         // Get device fingerprint data
         $device_data = Fraud_Detection_Device_Fingerprint::get_device_data();
@@ -106,9 +118,14 @@ class Fraud_Detection_Detector {
 
         // Check daily order limit by phone
         if ( 'yes' === get_option( 'fraud_detection_check_phone', 'yes' ) && ! empty( $phone_normalized ) ) {
+            error_log( 'Fraud Detection: Checking daily phone limit for ' . $phone_normalized );
             $limit_result = $this->check_daily_limit( $phone_normalized );
+            error_log( 'Fraud Detection: Daily limit check result - count=' . $limit_result['count'] . ', limit=' . $limit_result['limit'] . ', exceeded=' . ( $limit_result['exceeded'] ? 'YES' : 'NO' ) );
+            
             if ( $limit_result['exceeded'] ) {
                 $message = get_option( 'fraud_detection_limit_message', __( 'You have reached the maximum number of orders allowed per day from this phone number.', 'fraud-detection' ) );
+                
+                error_log( 'Fraud Detection: BLOCKING ORDER - Daily phone limit exceeded' );
                 
                 // Send admin notification
                 $this->send_limit_notification( $billing_email, $phone_normalized, $limit_result['count'], $limit_result['limit'] );
@@ -256,16 +273,22 @@ class Fraud_Detection_Detector {
         $table = $plugin->database->get_order_logs_table();
         $limit = absint( get_option( 'fraud_detection_daily_limit', 3 ) );
 
+        error_log( 'Fraud Detection: Checking table ' . $table . ' for phone ' . $phone );
+
         // Count orders from this phone number today
-        $count = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$table} 
-                WHERE customer_phone_normalized = %s 
-                AND is_blocked = 0
-                AND DATE(date_created) = CURDATE()",
-                $phone
-            )
+        $query = $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} 
+            WHERE customer_phone_normalized = %s 
+            AND is_blocked = 0
+            AND DATE(date_created) = CURDATE()",
+            $phone
         );
+        
+        error_log( 'Fraud Detection: Query = ' . $query );
+        
+        $count = $wpdb->get_var( $query );
+        
+        error_log( 'Fraud Detection: Found ' . $count . ' orders today for phone ' . $phone . ' (limit=' . $limit . ')' );
 
         return array(
             'exceeded' => $count >= $limit,

@@ -39,12 +39,16 @@ class Fraud_Detection_Order_Tracker {
     public function track_order( $order_id, $posted_data, $order ) {
         global $wpdb;
 
+        error_log( 'Fraud Detection: track_order() called for order #' . $order_id );
+
         $plugin = Fraud_Detection_Plugin::get_instance();
         $table = $plugin->database->get_order_logs_table();
 
         // Get order data
         $billing_email = $order->get_billing_email();
         $billing_phone = $order->get_billing_phone();
+        
+        error_log( 'Fraud Detection: Tracking order - Phone=' . $billing_phone . ', Email=' . $billing_email );
         
         // Normalize phone
         $phone_normalized = '';
@@ -54,6 +58,8 @@ class Fraud_Detection_Order_Tracker {
             $phone_normalized = $billing_phone;
         }
 
+        error_log( 'Fraud Detection: Normalized phone=' . $phone_normalized );
+
         $customer_ip = fraud_detection_get_customer_ip();
         $order_total = $order->get_total();
 
@@ -61,7 +67,7 @@ class Fraud_Detection_Order_Tracker {
         $device_data = Fraud_Detection_Device_Fingerprint::get_device_data();
 
         // Insert log with device fingerprint data
-        $wpdb->insert(
+        $result = $wpdb->insert(
             $table,
             array(
                 'order_id'                   => $order_id,
@@ -81,6 +87,12 @@ class Fraud_Detection_Order_Tracker {
             ),
             array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%d', '%s' )
         );
+
+        if ( false === $result ) {
+            error_log( 'Fraud Detection: ERROR - Failed to insert order log. DB Error: ' . $wpdb->last_error );
+        } else {
+            error_log( 'Fraud Detection: Order tracked successfully in database' );
+        }
 
         // Add order note with device info
         $order->add_order_note(
